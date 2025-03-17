@@ -28,7 +28,7 @@ decoy_destination2_y = 0
 
 # Initialize game stats
 hp = 10
-gold = 0
+gold = 1
 total_moves = 0
 game_started = False
 random_event_percentage = 0.2
@@ -89,10 +89,16 @@ def print_UI(stdscr, player_x, player_y, msg = None):
       stdscr.addstr(f"{msg}")
     stdscr.refresh()  # Refresh the screen to show changes
 
+def print_death_cause(stdscr, event):
+   stdscr.clear()
+   print_UI(stdscr, player_x, player_y)
+   stdscr.addstr(event)
+   stdscr.refresh()
+   time.sleep(4)
+
 # Function to handle random events
 def random_event(stdscr):
     global gold, hp, player_x, player_y
-    sec = 2
 
     events = [
         "treasure",
@@ -105,7 +111,7 @@ def random_event(stdscr):
     ]
     event = random.choice(events)
     if total_moves == 0:
-        return
+        return ""
       
     if (event == "what?"):
       if (total_moves % 2 != 0):
@@ -118,12 +124,18 @@ def random_event(stdscr):
         hp -= 4
         event = "\nA bear appears and takes a slash at you!" \
         "\nYou nearly escape with your life!  -4 hp"
+        if hp <= 0:
+           print_death_cause(stdscr, event)
     if event == "rain":
         hp -= 1
         event = "\nA cold heavy rain occurs.  -1 hp"
+        if hp <= 0:
+           print_death_cause(stdscr, event)
     if event == "ankle":
         hp -= 1
         event = "\nYou twist your ankle walking over a rock!  -1 hp"
+        if hp <= 0:
+           print_death_cause(stdscr, event)
     if event == "twister":
         player_x = random_coord()
         player_y = random_coord()
@@ -139,14 +151,12 @@ def random_event(stdscr):
         "\nYou wake up looking around and" \
         "\n..feel completely disoriented!" \
         "\n\nOff in the distance, you hear a laugh..?"
-        sec = 5
     if event == "merchant":
         event = "\nYou stumble across an old merchant." \
         "\nWould you like to purchase some bread for 2 gold pieces?" \
-        "[y] / [n]"
+        "\n[y] / [n]"
         stdscr.addstr(f"{event}\n")
         stdscr.refresh()
-        time.sleep(2)
         # Get the key pressed
         while True:
           key = stdscr.getch()
@@ -154,7 +164,8 @@ def random_event(stdscr):
             if (gold >= 2):
               gold -= 2
               hp += 5
-              event = "\n*Gulp*" \
+              event = "\n*noM noM*" \
+                      "\n*gulp*" \
                       "\nYou feel better."
               break
             else:
@@ -163,10 +174,7 @@ def random_event(stdscr):
           elif (key == ord('n')):
             event = "\nYou leave"
             break
-
-    stdscr.addstr(f"{event}\n")
-    stdscr.refresh()
-    time.sleep(sec)
+    return event
 
 # Determines when player is at destination
 def arrived_at_destination():
@@ -270,15 +278,17 @@ def game_loop(stdscr):
             if GRID_MIN <= new_x <= GRID_MAX and GRID_MIN <= new_y <= GRID_MAX:
                 player_x, player_y = new_x, new_y
                 msg = None
+                event_text = ""
                 # Check for a random event (20% chance)
                 if random.random() < random_event_percentage:
-                    random_event(stdscr)
+                  event_text = random_event(stdscr)
                 if (arrived_at_decoy_destination(stdscr)):
                   msg = "Wrong temple!"
 
 
                 total_moves += 1
                 print_UI(stdscr, player_x, player_y, msg)
+                stdscr.addstr(f'{event_text}')
             else:
                 stdscr.addstr("You can't go that way!\n")
             stdscr.refresh()
